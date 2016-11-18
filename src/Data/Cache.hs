@@ -3,6 +3,7 @@ module Data.Cache(
     createCache,
     cache,
     fetch,
+    evict,
     fetchCached,
     filterCached,
     count
@@ -60,6 +61,10 @@ fetchM k c = do
     t <- time
     liftIO . atomically . modifyTVar (c ^. cacheItems) $ purge c t . set (at k) (Just $ Item k t v)
     return v
+
+evict :: (MonadIO m, Eq k, Ord k, Hashable k) => Cache m k v -> k -> m ()
+evict c k = liftIO $ do
+    atomically . modifyTVar (c ^. cacheItems) $ HM.delete k
 
 purge :: (Eq k, Hashable k) => Cache m k v -> Int -> HM.HashMap k (Item k v) -> HM.HashMap k (Item k v)
 purge c tme = trim maxItems . HM.filter (checkAge maxAge tme)
