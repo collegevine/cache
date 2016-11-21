@@ -23,9 +23,21 @@ import Data.Maybe (catMaybes)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 
 -- |Create a cache
-createCache :: (MonadIO m, Eq k, Ord k, Hashable k) => Int -> Int -> (k -> m v) -> STM (Cache m k v)
-createCache maxItems maxAge lu = do
-    items <- newTVar HM.empty
+createCache :: (MonadIO m, Eq k, Ord k, Hashable k) => 
+    Int -> 
+    Int -> 
+    (k -> m v) -> 
+    STM (Cache m k v)
+createCache = createPreloadedCache []
+
+createPreloadedCache :: (MonadIO m, Eq k, Ord k, Hashable k) => 
+    [(k, (Item k v))] -> 
+    Int -> 
+    Int -> 
+    (k -> m v) -> 
+    STM (Cache m k v)
+createPreloadedCache xs maxItems maxAge lu = do
+    items <- newTVar $ HM.fromList xs
     return $ Cache {
         _cacheLookup = lu,
         _cacheItems = items,
